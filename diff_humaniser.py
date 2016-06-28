@@ -32,7 +32,7 @@ def load_diff(file, git_root):
                 current_file = extract_changed_file(line)
             elif current_file != "" and not (line.startswith("index ") and ".." in line):
                 if line.startswith("@@"):
-                    changes.append("@@@@")
+                    changes.append("@@@@ " + line.split("@@", 2)[2].strip())
                     line_number = extract_line_number(line)
                 elif not (line.startswith("---") or line.startswith("+++")):
                     if line.startswith("-"):
@@ -139,7 +139,6 @@ if __name__ == '__main__':
         from_rev = sys.argv[5]
         to_rev = sys.argv[6]
 
-
     print "Using git repo: " + git_repo
     print "From Revision: " + from_rev
     print "To Revision: " + to_rev
@@ -165,6 +164,8 @@ if __name__ == '__main__':
         for change in change_list:
             if change.startswith("@@@@"):
                 html_table = html_table + "<hr/>"
+                html_table = html_table + "<pre>"+change.strip("@@@@").strip() + "</pre>"
+                html_table = html_table + "<pre>...</pre>"
             elif change.startswith("---"):
                 html_table = html_table + "\n\t\t\t\t<pre class='before'><b>Old File:</b> " + change.replace("---", "", 1).replace("b/", "", 1).replace("a/", "", 1) + "</pre>"
             elif change.startswith("+++"):

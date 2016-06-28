@@ -5,6 +5,10 @@ I made this because I wanted to generate a human readable diff for changes made 
 
 I'm not a python expert by any means, so I thought this would be a good exercise to get more used to it.
 
+## Requirements:
+* Python
+* Git
+
 ## Usage
 ```bash
 python diff_humaniser.py <from_version> <to_version> <path_to_git_repo> [repository_name] [from_revision] [to_revision]
