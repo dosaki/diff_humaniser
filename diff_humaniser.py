@@ -92,22 +92,53 @@ def make_menu_item(filename, current_folder, counter):
 
     return html_menu
 
-def make_collapse_script():
+def make_scripts():
     return """
         <script>
+            var selectLine = function(anchor){
+                location.hash=anchor;
+                window.scrollBy(0, -75);
+            }
             var toggleCollapsed = function(folderName, clickedElement){
                 var element = document.getElementById("list_" + folderName);
                 if(element.style.display === "none"){
-                    element.style.display = "block"
-                    clickedElement.getElementsByTagName("a")[0].innerHTML = "(-) " + folderName
+                    element.style.display = "block";
+                    clickedElement.getElementsByTagName("a")[0].innerHTML = "(-) " + folderName;
                 }
                 else{
-                    element.style.display = "none"
-                    clickedElement.getElementsByTagName("a")[0].innerHTML = "(+) " + folderName
+                    element.style.display = "none";
+                    clickedElement.getElementsByTagName("a")[0].innerHTML = "(+) " + folderName;
                 }
             }
+            var toggleHighlight = function(hash){
+                line = document.getElementsByName(hash)[0].children[0];
+                if(line.className.indexOf("selected") != -1){
+                    line.className = line.className.replace(" selected", "");
+                }
+                else{
+                    line.className = line.className + " selected";
+                }
+            }
+            var changeHighlight = function(url){
+                if(url.indexOf("#") != -1){
+                    var hash_id = url.split('#')[1];
+                    toggleHighlight(hash_id);
+                    return true;
+                }
+                return false;
+            }
+            window.onhashchange = function(e){
+                changeHighlight(e.oldURL);
+                changeHighlight(e.newURL);
+            }
+            document.addEventListener("DOMContentLoaded", function(event) {
+                if(changeHighlight(location.hash)){
+                    window.scrollBy(0, -75);
+                }
+            });
         </script>
     """
+
 def generate_diff(from_revision, to_revision, working_directory):
     return subprocess.check_output(["git", "diff", from_revision, to_revision], cwd=working_directory)
 
@@ -128,29 +159,31 @@ def humanize(git_repo, diff_set, raw_diff_file_name, from_ver, to_ver, from_rev,
 
         html_table = html_table + "\n\t\t\t<h1 class='title'><a name='"+str(file_counter)+"'>Changes for " + filename + " <small><a href='#top'>(scroll to top)</a></small></h1>"
         html_table = html_table + "\n\t\t<div class='file-change-block'>"
+        counter = 0
         for change in change_list:
-
-             if change.startswith("@@@@"):
-                 html_table = html_table + "<hr/>"
-                 html_table = html_table + "<pre>"+change.strip("@@@@").strip() + "</pre>"
-                 html_table = html_table + "<pre>...</pre>"
-             elif change.startswith("---"):
-                 html_table = html_table + "\n\t\t\t\t<pre class='before'><b>Old File:</b> " + change.replace("---", "", 1).replace("b/", "", 1).replace("a/", "", 1) + "</pre>"
-             elif change.startswith("+++"):
-                 html_table = html_table + "\n\t\t\t\t<pre class='after'><b>New File:</b> " + change.replace("+++", "", 1).replace("b/", "", 1).replace("a/", "", 1) + "</pre>"
-             elif change.startswith("-"):
-                 html_table = html_table + "\n\t\t\t\t<pre class='before'>" + change.replace("-", "", 1) + "</pre>"
-             elif change.startswith("+"):
-                 html_table = html_table + "\n\t\t\t\t<pre class='after'>" + change.replace("+", "", 1) + "</pre>"
-             else:
-                 html_table = html_table + "\n\t\t\t\t<pre>" + change + "</pre>"
+            counter += 1
+            line_change_id=str(file_counter)+"_"+str(counter)
+            if change.startswith("@@@@"):
+                html_table = html_table + "<hr/>"
+                html_table = html_table + "<pre>"+change.strip("@@@@").strip() + "</pre>"
+                html_table = html_table + "<pre>...</pre>"
+            elif change.startswith("---"):
+                html_table = html_table + "\n\t\t\t\t<pre class='before'><b>Old File:</b> " + change.replace("---", "", 1).replace("b/", "", 1).replace("a/", "", 1) + "</pre>"
+            elif change.startswith("+++"):
+                html_table = html_table + "\n\t\t\t\t<pre class='after'><b>New File:</b> " + change.replace("+++", "", 1).replace("b/", "", 1).replace("a/", "", 1) + "</pre>"
+            elif change.startswith("-"):
+                html_table = html_table + "\n\t\t\t\t<a onclick='selectLine(\"#"+line_change_id+"\")' name='"+line_change_id+"'><pre class='before'>" + change.replace("-", "", 1) + "</pre></a>"
+            elif change.startswith("+"):
+                html_table = html_table + "\n\t\t\t\t<a onclick='selectLine(\"#"+line_change_id+"\")' name='"+line_change_id+"'><pre class='after'>" + change.replace("+", "", 1) + "</pre></a>"
+            else:
+                html_table = html_table + "\n\t\t\t\t<a onclick='selectLine(\"#"+line_change_id+"\")' name='"+line_change_id+"'><pre>" + change + "</pre></a>"
         html_table = html_table + "\n\t\t</div>"
         html_table = html_table + "\n\t\t<div class='end-of-change'><a href='#"+str(file_counter)+"'>(scroll to start of changes)</a> <a href='#top'>(scroll to top)</a></div>"
 
     html_menu = html_menu + "\n\t\t\t</ul>"
     html_menu = html_menu + "\n\t\t</div>"
 
-    script = make_collapse_script()
+    script = make_scripts()
     body = html_menu + html_table + script
     header = make_header(from_ver, to_ver, git_repo_title)
     return make_html_file(body, header, git_repo_title)
