@@ -19,6 +19,14 @@ def extract_line_number(line):
         "+": int(line_numbers[1].split(",")[0].replace("+", "", 1))
     }
 
+def decode(s):
+    for encoding in "utf-8", "utf-8-sig", "utf-16", "ascii":
+        try:
+            return s.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return s.decode("latin-1") # will always work
+
 def load_diff(diff_text, git_root):
     diff_list = {}
     current_file = ""
@@ -29,7 +37,7 @@ def load_diff(diff_text, git_root):
     line_number = {"-": -1, "+": -1}
 
     for line_unencoded in lines:
-        line = line_unencoded.decode()
+        line = decode(line_unencoded)
 
         if is_git_start(line):
             if current_file != "":
@@ -225,12 +233,12 @@ if __name__ == '__main__':
 
 
     diff_text = generate_diff(from_rev, to_rev, git_repo)
-    diff_set = load_diff(diff_text, git_repo)
-    full_html = humanize(git_repo, diff_set, output_diff, from_ver, to_ver, from_rev, to_rev, git_repo_title, _encoding)
-
     f = open(output_diff, 'w')
     f.write(diff_text)
     f.close()
+
+    diff_set = load_diff(diff_text, git_repo)
+    full_html = humanize(git_repo, diff_set, output_diff, from_ver, to_ver, from_rev, to_rev, git_repo_title, _encoding)
 
     f = open(output, 'w')
     f.write(full_html)
