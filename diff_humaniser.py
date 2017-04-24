@@ -27,7 +27,7 @@ def decode(s):
             continue
     return s.decode("latin-1") # will always work
 
-def load_diff(diff_text, git_root):
+def load_diff(diff_text):
     diff_list = {}
     current_file = ""
     changes = []
@@ -150,7 +150,7 @@ def make_scripts():
 def generate_diff(from_revision, to_revision, working_directory):
     return subprocess.check_output(["git", "diff", from_revision, to_revision], cwd=working_directory)
 
-def humanize(git_repo, diff_set, raw_diff_file_name, from_ver, to_ver, from_rev, to_rev, git_repo_title, encoding):
+def humanize(diff_set, raw_diff_file_name, from_ver, to_ver, from_rev, to_rev, git_repo_title, encoding):
     _encoding = encoding
 
     html_table = ""
@@ -197,6 +197,10 @@ def humanize(git_repo, diff_set, raw_diff_file_name, from_ver, to_ver, from_rev,
     return make_html_file(body, header, git_repo_title)
 
 if __name__ == '__main__':
+    mode="DEFAULT"
+    if len(sys.argv) > 0:
+        mode=sys.argv[1]
+
     started = datetime.now()
     reload(sys)
     sys.setdefaultencoding(_encoding)
@@ -209,36 +213,42 @@ if __name__ == '__main__':
     to_rev = "HEAD"
     git_repo_title = "Comparison"
 
-    if len(sys.argv) > 3:
-        from_ver = sys.argv[1]
-        to_ver = sys.argv[2]
-        git_repo = sys.argv[3]
-        output = from_ver + "_to_" + to_ver + ".html"
-        output_diff = from_ver + "_to_" + to_ver + ".txt"
-    else:
-        print "Wrong syntax! Usage:"
-        print "\tpython " + sys.argv[0] + " <from_version> <to_version> <path_to_git_repo> [repository_name] [from_revision] [to_revision]"
-        print "'from' and 'to' revisions are optional. If not provided it will use HEAD~1 and HEAD"
-        sys.exit(1)
 
-    if len(sys.argv) > 4:
-        git_repo_title = sys.argv[4]
-    if len(sys.argv) > 6:
-        from_rev = sys.argv[5]
-        to_rev = sys.argv[6]
+    if mode.upper() == "DEFAULT":
+        if len(sys.argv) > 4:
+            from_ver = sys.argv[2]
+            to_ver = sys.argv[3]
+            git_repo = sys.argv[4]
+            output = from_ver + "_to_" + to_ver + ".html"
+            output_diff = from_ver + "_to_" + to_ver + ".txt"
+        else:
+            print "Wrong syntax! Usage:"
+            print "\tpython " + sys.argv[0] + " <from_version> <to_version> <path_to_git_repo> [repository_name] [from_revision] [to_revision]"
+            print "'from' and 'to' revisions are optional. If not provided it will use HEAD~1 and HEAD"
+            sys.exit(1)
 
-    print "Using git repo: " + git_repo
-    print "From Revision: " + from_rev
-    print "To Revision: " + to_rev
+        if len(sys.argv) > 5:
+            git_repo_title = sys.argv[5]
+        if len(sys.argv) > 7:
+            from_rev = sys.argv[6]
+            to_rev = sys.argv[7]
 
+        print "Using git repo: " + git_repo
+        print "From Revision: " + from_rev
+        print "To Revision: " + to_rev
 
-    diff_text = generate_diff(from_rev, to_rev, git_repo)
-    f = open(output_diff, 'w')
-    f.write(diff_text)
-    f.close()
+        diff_text = generate_diff(from_rev, to_rev, git_repo)
+        f = open(output_diff, 'w')
+        f.write(diff_text)
+        f.close()
+    elif mode.upper() == "PRE-DIFF":
+        if len(sys.argv) > 4:
+            from_ver = sys.argv[2]
+            to_ver = sys.argv[3]
+            diff_text = sys.argv[4]
 
-    diff_set = load_diff(diff_text, git_repo)
-    full_html = humanize(git_repo, diff_set, output_diff, from_ver, to_ver, from_rev, to_rev, git_repo_title, _encoding)
+    diff_set = load_diff(diff_text)
+    full_html = humanize(diff_set, output_diff, from_ver, to_ver, from_rev, to_rev, git_repo_title, _encoding)
 
     f = open(output, 'w')
     f.write(full_html)
