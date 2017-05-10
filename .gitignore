@@ -1,5 +1,6 @@
 *_to_*.html
 *_to_*.txt
+*_to_*.diff
 font/**
 img/**
 archive/**

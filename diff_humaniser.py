@@ -20,12 +20,15 @@ def extract_line_number(line):
     }
 
 def decode(s):
-    for encoding in "utf-8", "utf-8-sig", "utf-16", "ascii":
-        try:
-            return s.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return s.decode("latin-1") # will always work
+    try:
+        for encoding in "utf-8", "utf-8-sig", "utf-16", "ascii":
+            try:
+                return s.decode(encoding)
+            except UnicodeDecodeError:
+                continue
+        return s.decode("latin-1") # will always work
+    except:
+        return s
 
 def load_diff(diff_text):
     diff_list = {}
@@ -38,8 +41,8 @@ def load_diff(diff_text):
 
     for line_unencoded in lines:
         line = decode(line_unencoded)
-
         if is_git_start(line):
+
             if current_file != "":
                 diff_list[current_file] = changes
                 changes = []
@@ -160,6 +163,8 @@ def humanize(diff_set, raw_diff_file_name, from_ver, to_ver, from_rev, to_rev, g
     current_folder = ""
     file_counter = 0
 
+
+
     for filename, change_list in sorted(diff_set.iteritems()):
         file_counter = file_counter+1
         html_menu = html_menu + make_menu_item(filename, current_folder, file_counter)
@@ -202,11 +207,14 @@ if __name__ == '__main__':
         mode=sys.argv[1]
 
     started = datetime.now()
-    reload(sys)
-    sys.setdefaultencoding(_encoding)
+    try:
+        reload(sys)
+        sys.setdefaultencoding(_encoding)
+    except:
+        print("")
     git_repo = "C:/Games/Steam/steamapps/common/Stellaris/"
     output = "diff.html"
-    output_diff = "diff.txt"
+    output_diff = "diff.diff"
     from_ver = "previous"
     to_ver = "current"
     from_rev = "HEAD~1"
@@ -220,11 +228,11 @@ if __name__ == '__main__':
             to_ver = sys.argv[3]
             git_repo = sys.argv[4]
             output = from_ver + "_to_" + to_ver + ".html"
-            output_diff = from_ver + "_to_" + to_ver + ".txt"
+            output_diff = from_ver + "_to_" + to_ver + ".diff"
         else:
-            print "Wrong syntax! Usage:"
-            print "\tpython " + sys.argv[0] + " <from_version> <to_version> <path_to_git_repo> [repository_name] [from_revision] [to_revision]"
-            print "'from' and 'to' revisions are optional. If not provided it will use HEAD~1 and HEAD"
+            print("Wrong syntax! Usage:")
+            print("\tpython " + sys.argv[0] + " <from_version> <to_version> <path_to_git_repo> [repository_name] [from_revision] [to_revision]")
+            print("'from' and 'to' revisions are optional. If not provided it will use HEAD~1 and HEAD")
             sys.exit(1)
 
         if len(sys.argv) > 5:
@@ -233,9 +241,9 @@ if __name__ == '__main__':
             from_rev = sys.argv[6]
             to_rev = sys.argv[7]
 
-        print "Using git repo: " + git_repo
-        print "From Revision: " + from_rev
-        print "To Revision: " + to_rev
+        print("Using git repo: " + git_repo)
+        print("From Revision: " + from_rev)
+        print("To Revision: " + to_rev)
 
         diff_text = generate_diff(from_rev, to_rev, git_repo)
         f = open(output_diff, 'w')
@@ -245,7 +253,9 @@ if __name__ == '__main__':
         if len(sys.argv) > 4:
             from_ver = sys.argv[2]
             to_ver = sys.argv[3]
-            diff_text = sys.argv[4]
+            print(sys.argv[4])
+            with open(sys.argv[4], 'r') as existing_diff_file:
+                diff_text=existing_diff_file.read()
 
     diff_set = load_diff(diff_text)
     full_html = humanize(diff_set, output_diff, from_ver, to_ver, from_rev, to_rev, git_repo_title, _encoding)
@@ -253,4 +263,4 @@ if __name__ == '__main__':
     f = open(output, 'w')
     f.write(full_html)
     f.close()
-    print "Started at %s and ended at %s" % (str(started), str(datetime.now()))
+    print("Started at %s and ended at %s" % (str(started), str(datetime.now())))
