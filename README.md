@@ -26,4 +26,4 @@ Make sure to edit `header.html`, `head.html` and `footer.html` but please leave 
 ```bash
 python diff_humaniser.py DEFAULT 1.1.x 1.2.x "C:/Games/Steam/steamapps/common/Stellaris/" "STELLARIS"
 ```
-The command above generated http://dosaki.net/stellarisdiff/1.1.x_to_1.2.x.html
+The command above generated https://dosaki.net/stellarisdiff/1.1.x_to_1.2.x.html
